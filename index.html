@@ -5,56 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIFA 2026 — Live TV</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Shaka Player for DASH + DRM -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js"></script>
-    <!-- HLS.js for HLS streams -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
 </head>
 <body>
 
-    <!-- NAVBAR -->
+    <!-- NAVBAR: 2-row layout -->
     <nav class="navbar" id="navbar">
-        <div class="nav-brand">
-            <span class="brand-icon">⚽</span>
-            <span class="brand-text">FIFA <em>2026</em></span>
+        <!-- Row 1: Brand + Live badge -->
+        <div class="nav-top">
+            <div class="nav-brand">
+                <span class="brand-icon">⚽</span>
+                <span class="brand-text">FIFA <em>2026</em></span>
+                <span class="brand-sub">Live TV</span>
+            </div>
+            <div class="nav-live-badge">
+                <span class="dot"></span> LIVE
+            </div>
         </div>
-        <div class="channel-strip" id="channelStrip">
-            <!-- Channels injected by JS -->
-        </div>
-        <div class="nav-live-badge">
-            <span class="dot"></span> LIVE
+
+        <!-- Row 2: Channel cards -->
+        <div class="channel-row">
+            <button class="scroll-arrow left" id="scrollLeft" aria-label="Scroll left">&#8249;</button>
+            <div class="channel-strip" id="channelStrip">
+                <!-- Injected by JS -->
+            </div>
+            <button class="scroll-arrow right" id="scrollRight" aria-label="Scroll right">&#8250;</button>
         </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN -->
     <main class="main">
 
-        <!-- PLAYER SECTION -->
+        <!-- PLAYER -->
         <section class="player-section">
             <div class="player-header">
                 <div class="now-playing" id="nowPlaying">
                     <img id="activeChannelLogo" src="" alt="" class="active-logo" />
-                    <span id="activeChannelName">Select a channel to start</span>
+                    <span id="activeChannelName">Loading...</span>
+                    <span class="live-pill"><span class="dot-sm"></span>LIVE</span>
                 </div>
                 <div class="player-controls-hint">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                    Fullscreen available
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    Fullscreen
                 </div>
             </div>
 
             <div class="player-wrapper">
                 <div class="player-placeholder" id="playerPlaceholder">
                     <div class="placeholder-inner">
-                        <div class="trophy-icon">🏆</div>
-                        <p class="placeholder-title">FIFA World Cup 2026</p>
-                        <p class="placeholder-sub">Select a channel from the navbar to start watching</p>
+                        <div class="loading-spinner" id="loadingSpinner"></div>
+                        <div class="trophy-icon" id="trophyIcon">🏆</div>
+                        <p class="placeholder-title" id="placeholderTitle">FIFA World Cup 2026</p>
+                        <p class="placeholder-sub" id="placeholderSub">Starting stream...</p>
                     </div>
                 </div>
                 <video id="videoPlayer" controls playsinline></video>
             </div>
         </section>
 
-        <!-- FIXTURE SECTION -->
+        <!-- FIXTURES -->
         <section class="fixture-section">
             <div class="section-header">
                 <h2 class="section-title">Fixtures & Results</h2>
@@ -71,7 +81,7 @@
     <footer class="footer">
         <div class="footer-inner">
             <div class="footer-brand">
-                <span class="footer-ball">⚽</span>
+                <span>⚽</span>
                 <span>FIFA 2026 Live TV</span>
             </div>
             <div class="footer-credit">
