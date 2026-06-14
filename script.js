@@ -2,67 +2,54 @@
    FIFA 2026 LIVE TV — script.js
    ============================================= */
 
-const CHANNELS_URL = 'fifa.json';
-const FIXTURE_URL  = 'fixture.json';
+const CHANNELS_URL = './fifa.json';
+const FIXTURE_URL  = './fixture.json';
 
-let channels     = [];
-let activeIndex  = -1;
-let shakaPlayer  = null;
-let hlsInstance  = null;
+let channels    = [];
+let activeIndex = -1;
+let shakaPlayer = null;
+let hlsInstance = null;
 
-// ── Helpers ──────────────────────────────────
+/* ─────────────────────────────────────────────
+   CHANNEL STRIP
+───────────────────────────────────────────── */
 
-function formatDate(dateStr) {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-// ── Navbar channel cards ──────────────────────
-
-function buildChannelStrip(channels) {
+function buildChannelStrip(list) {
     const strip = document.getElementById('channelStrip');
     strip.innerHTML = '';
 
-    channels.forEach((ch, i) => {
+    list.forEach((ch, i) => {
         const card = document.createElement('button');
         card.className = 'channel-card';
-        card.dataset.index = i;
         card.setAttribute('aria-label', ch.name);
         card.innerHTML = `
-            <img src="${ch.logo}" alt="${ch.name}"
-                 onerror="this.style.display='none'" />
+            <img src="${ch.logo}" alt="${ch.name}" onerror="this.style.display='none'" />
             <span class="channel-card-name">${ch.name}</span>
         `;
         card.addEventListener('click', () => loadChannel(i));
         strip.appendChild(card);
     });
 
-    // Arrow scroll
-    const leftBtn  = document.getElementById('scrollLeft');
-    const rightBtn = document.getElementById('scrollRight');
-    leftBtn.addEventListener('click',  () => strip.scrollBy({ left: -200, behavior: 'smooth' }));
-    rightBtn.addEventListener('click', () => strip.scrollBy({ left:  200, behavior: 'smooth' }));
+    document.getElementById('scrollLeft').addEventListener('click', () =>
+        strip.scrollBy({ left: -220, behavior: 'smooth' }));
+    document.getElementById('scrollRight').addEventListener('click', () =>
+        strip.scrollBy({ left: 220, behavior: 'smooth' }));
 }
 
-function setActiveCard(index) {
-    document.querySelectorAll('.channel-card').forEach((card, i) => {
-        card.classList.toggle('active', i === index);
-    });
-
-    // Scroll active card into view
+function setActiveCard(i) {
+    document.querySelectorAll('.channel-card').forEach((c, idx) =>
+        c.classList.toggle('active', idx === i));
     const cards = document.querySelectorAll('.channel-card');
-    if (cards[index]) {
-        cards[index].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
+    if (cards[i]) cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 
-// ── Player state UI ──────────────────────────
+/* ─────────────────────────────────────────────
+   PLAYER UI STATES
+───────────────────────────────────────────── */
 
 function showLoading(name) {
-    const placeholder = document.getElementById('playerPlaceholder');
-    placeholder.style.display = 'flex';
+    document.getElementById('playerPlaceholder').style.display = 'flex';
     document.getElementById('videoPlayer').style.display = 'none';
-
     document.getElementById('loadingSpinner').style.display = 'block';
     document.getElementById('trophyIcon').style.display = 'none';
     document.getElementById('placeholderTitle').textContent = name;
@@ -70,10 +57,8 @@ function showLoading(name) {
 }
 
 function showError(msg) {
-    const placeholder = document.getElementById('playerPlaceholder');
-    placeholder.style.display = 'flex';
+    document.getElementById('playerPlaceholder').style.display = 'flex';
     document.getElementById('videoPlayer').style.display = 'none';
-
     document.getElementById('loadingSpinner').style.display = 'none';
     document.getElementById('trophyIcon').style.display = 'block';
     document.getElementById('trophyIcon').textContent = '📡';
@@ -83,130 +68,90 @@ function showError(msg) {
 
 function showPlayer() {
     document.getElementById('playerPlaceholder').style.display = 'none';
-    const video = document.getElementById('videoPlayer');
-    video.style.display = 'block';
+    document.getElementById('videoPlayer').style.display = 'block';
 }
-
-// ── Now-playing bar ──────────────────────────
 
 function updateNowPlaying(ch) {
-    const logo   = document.getElementById('activeChannelLogo');
-    const nameEl = document.getElementById('activeChannelName');
+    const logo = document.getElementById('activeChannelLogo');
     logo.src = ch.logo;
     logo.style.display = 'block';
-    nameEl.textContent = ch.name;
+    document.getElementById('activeChannelName').textContent = ch.name;
 }
 
-// ── Channel load ─────────────────────────────
+/* ─────────────────────────────────────────────
+   CHANNEL PLAYBACK
+───────────────────────────────────────────── */
 
 async function loadChannel(index) {
     if (activeIndex === index) return;
     activeIndex = index;
-
     const ch = channels[index];
     setActiveCard(index);
     updateNowPlaying(ch);
     showLoading(ch.name);
-
-    const video = document.getElementById('videoPlayer');
     await destroyPlayers();
-
     if (ch.type === 'dash') {
-        await playDash(video, ch);
+        await playDash(document.getElementById('videoPlayer'), ch);
     } else {
-        playHls(video, ch);
+        playHls(document.getElementById('videoPlayer'), ch);
     }
 }
 
 async function destroyPlayers() {
-    if (shakaPlayer) {
-        try { await shakaPlayer.destroy(); } catch(e) {}
-        shakaPlayer = null;
-    }
-    if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-    }
-    const video = document.getElementById('videoPlayer');
-    video.removeAttribute('src');
-    video.load();
+    if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e) {} shakaPlayer = null; }
+    if (hlsInstance)  { hlsInstance.destroy(); hlsInstance = null; }
+    const v = document.getElementById('videoPlayer');
+    v.removeAttribute('src');
+    v.load();
 }
 
-// ── DASH via Shaka ───────────────────────────
-
 async function playDash(video, ch) {
-    if (typeof shaka === 'undefined' || !shaka.Player) {
-        showError('Shaka Player failed to load.');
-        return;
-    }
-
+    if (typeof shaka === 'undefined') { showError('Shaka Player failed to load.'); return; }
     shaka.polyfill.installAll();
-
-    if (!shaka.Player.isBrowserSupported()) {
-        showError('Your browser does not support DASH/DRM playback.');
-        return;
-    }
+    if (!shaka.Player.isBrowserSupported()) { showError('Browser does not support DASH/DRM.'); return; }
 
     shakaPlayer = new shaka.Player();
     await shakaPlayer.attach(video);
 
     if (ch.kid && ch.key) {
-        shakaPlayer.configure({
-            drm: { clearKeys: { [ch.kid]: ch.key } }
-        });
+        shakaPlayer.configure({ drm: { clearKeys: { [ch.kid]: ch.key } } });
     }
 
-    shakaPlayer.addEventListener('error', (e) => {
-        console.error('Shaka error:', e.detail);
-        showError('Stream error — it may be geo-restricted or offline.');
-    });
+    shakaPlayer.addEventListener('error', () =>
+        showError('Stream error — may be geo-restricted or offline.'));
 
     video.addEventListener('canplay', showPlayer, { once: true });
 
     try {
         await shakaPlayer.load(ch.url);
         video.play().catch(() => {});
-    } catch (err) {
-        console.error('Shaka load error:', err);
+    } catch {
         showError('Unable to load stream — geo-restricted or offline.');
     }
 }
 
-// ── HLS via hls.js ───────────────────────────
-
 function playHls(video, ch) {
+    if (typeof Hls === 'undefined') { showError('HLS.js failed to load.'); return; }
+
     if (Hls.isSupported()) {
-        hlsInstance = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true,
-            backBufferLength: 30
-        });
+        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 30 });
         hlsInstance.loadSource(ch.url);
         hlsInstance.attachMedia(video);
-
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-            showPlayer();
-            video.play().catch(() => {});
-        });
-
-        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
-            if (data.fatal) {
-                console.error('HLS error:', data);
-                showError('Stream unavailable — geo-restricted or offline.');
-            }
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { showPlayer(); video.play().catch(() => {}); });
+        hlsInstance.on(Hls.Events.ERROR, (_, data) => {
+            if (data.fatal) showError('Stream unavailable — geo-restricted or offline.');
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = ch.url;
-        video.addEventListener('loadedmetadata', () => {
-            showPlayer();
-            video.play().catch(() => {});
-        }, { once: true });
+        video.addEventListener('loadedmetadata', () => { showPlayer(); video.play().catch(() => {}); }, { once: true });
     } else {
-        showError('HLS playback not supported in this browser.');
+        showError('HLS not supported in this browser.');
     }
 }
 
-// ── Fixtures ─────────────────────────────────
+/* ─────────────────────────────────────────────
+   FIXTURES
+───────────────────────────────────────────── */
 
 const ROUND_LABELS = {
     1: 'Group Stage — Matchday 1',
@@ -219,67 +164,65 @@ const ROUND_LABELS = {
     8: 'Final'
 };
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE  = 6;
 let allFixtures  = [];
 let currentPage  = 1;
 
 function getMatchStatus(f) {
     const now      = new Date();
-    const matchEnd = new Date(new Date(f.DateUtc).getTime() + 110 * 60 * 1000); // ~110 min after kickoff
-    const matchStart = new Date(f.DateUtc);
-
+    const start    = new Date(f.DateUtc);
+    const end      = new Date(start.getTime() + 110 * 60 * 1000);
     if (f.Winner !== '' || f.HomeTeamScore !== null) return 'finished';
-    if (now >= matchStart && now <= matchEnd) return 'live';
+    if (now >= start && now <= end) return 'live';
     return 'upcoming';
 }
 
 function isMatchOver(f) {
-    // A match is "over" if it has a result OR kickoff was >110 min ago
-    const now = new Date();
-    const matchEnd = new Date(new Date(f.DateUtc).getTime() + 110 * 60 * 1000);
-    return (f.Winner !== '' || f.HomeTeamScore !== null) && now > matchEnd;
+    const end = new Date(new Date(f.DateUtc).getTime() + 110 * 60 * 1000);
+    return (f.Winner !== '' || f.HomeTeamScore !== null) && new Date() > end;
 }
 
-function flagUrl(teamName) {
-    // Map common team names to ISO country codes for flag CDN
-    const map = {
-        'Mexico': 'mx', 'South Africa': 'za', 'Korea Republic': 'kr', 'Czechia': 'cz',
-        'Canada': 'ca', 'Bosnia and Herzegovina': 'ba', 'USA': 'us', 'Paraguay': 'py',
-        'Qatar': 'qa', 'Switzerland': 'ch', 'Brazil': 'br', 'Morocco': 'ma',
-        'Haiti': 'ht', 'Scotland': 'gb-sct', 'Australia': 'au', 'Türkiye': 'tr',
-        'Germany': 'de', 'Curaçao': 'cw', 'Netherlands': 'nl', 'Japan': 'jp',
-        "Côte d'Ivoire": 'ci', 'Ecuador': 'ec', 'Sweden': 'se', 'Tunisia': 'tn',
-        'Spain': 'es', 'Cabo Verde': 'cv', 'Belgium': 'be', 'Egypt': 'eg',
-        'Saudi Arabia': 'sa', 'Uruguay': 'uy', 'IR Iran': 'ir', 'New Zealand': 'nz',
-        'France': 'fr', 'Senegal': 'sn', 'Iraq': 'iq', 'Norway': 'no',
-        'Argentina': 'ar', 'Algeria': 'dz', 'Austria': 'at', 'Jordan': 'jo',
-        'Portugal': 'pt', 'Congo DR': 'cd', 'England': 'gb-eng', 'Croatia': 'hr',
-        'Ghana': 'gh', 'Panama': 'pa', 'Uzbekistan': 'uz', 'Colombia': 'co',
-        'TBA': null, 'To be announced': null
-    };
-    const code = map[teamName];
+const FLAG_MAP = {
+    'Mexico':'mx','South Africa':'za','Korea Republic':'kr','Czechia':'cz',
+    'Canada':'ca','Bosnia and Herzegovina':'ba','USA':'us','Paraguay':'py',
+    'Qatar':'qa','Switzerland':'ch','Brazil':'br','Morocco':'ma',
+    'Haiti':'ht','Scotland':'gb-sct','Australia':'au','Türkiye':'tr',
+    'Germany':'de','Curaçao':'cw','Netherlands':'nl','Japan':'jp',
+    "Côte d'Ivoire":'ci','Ecuador':'ec','Sweden':'se','Tunisia':'tn',
+    'Spain':'es','Cabo Verde':'cv','Belgium':'be','Egypt':'eg',
+    'Saudi Arabia':'sa','Uruguay':'uy','IR Iran':'ir','New Zealand':'nz',
+    'France':'fr','Senegal':'sn','Iraq':'iq','Norway':'no',
+    'Argentina':'ar','Algeria':'dz','Austria':'at','Jordan':'jo',
+    'Portugal':'pt','Congo DR':'cd','England':'gb-eng','Croatia':'hr',
+    'Ghana':'gh','Panama':'pa','Uzbekistan':'uz','Colombia':'co'
+};
+
+function flagUrl(name) {
+    const code = FLAG_MAP[name];
     return code ? `https://flagcdn.com/w40/${code}.png` : null;
 }
 
-function scoreDisplay(f) {
-    if (f.HomeTeamScore !== null && f.AwayTeamScore !== null) {
-        return `<span class="score-box">${f.HomeTeamScore} — ${f.AwayTeamScore}</span>`;
-    }
-    return `<span class="fixture-vs">VS</span>`;
+function formatKickoff(utc) {
+    const d = new Date(utc);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })
+         + ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }) + ' UTC';
 }
 
 function buildFixtureCard(f) {
-    const status      = getMatchStatus(f);
-    const statusClass = status;
-    const statusLabel = status === 'live'     ? '🔴 LIVE NOW'
-                      : status === 'finished'  ? (f.Winner === 'Draw' ? 'Draw' : `✓ ${f.Winner} Win`)
-                      : formatKickoff(f.DateUtc);
+    const status = getMatchStatus(f);
+    const label  = status === 'live'     ? '🔴 LIVE NOW'
+                 : status === 'finished' ? (f.Winner === 'Draw' ? 'Draw' : `✓ ${f.Winner} Win`)
+                 : formatKickoff(f.DateUtc);
 
-    const homeFlagUrl = flagUrl(f.HomeTeam);
-    const awayFlagUrl = flagUrl(f.AwayTeam);
+    const hFlag = flagUrl(f.HomeTeam);
+    const aFlag = flagUrl(f.AwayTeam);
+
+    const scoreHtml = (f.HomeTeamScore !== null && f.AwayTeamScore !== null)
+        ? `<span class="score-box">${f.HomeTeamScore} — ${f.AwayTeamScore}</span>`
+        : `<span class="fixture-vs">VS</span>`;
 
     const card = document.createElement('div');
-    card.className = `fixture-card ${status === 'live' ? 'fixture-live' : ''}`;
+    card.className = `fixture-card${status === 'live' ? ' fixture-live' : ''}`;
     card.innerHTML = `
         <div class="fixture-meta">
             <span class="fixture-group">${f.Group || 'Knockout'}</span>
@@ -287,108 +230,81 @@ function buildFixtureCard(f) {
         </div>
         <div class="fixture-teams">
             <div class="team ${f.Winner === f.HomeTeam ? 'team-winner' : ''}">
-                ${homeFlagUrl ? `<img class="team-flag" src="${homeFlagUrl}" alt="${f.HomeTeam}" onerror="this.style.display='none'" />` : '<span class="flag-placeholder">🏳</span>'}
+                ${hFlag ? `<img class="team-flag" src="${hFlag}" alt="${f.HomeTeam}" onerror="this.style.display='none'">` : '<span>🏳</span>'}
                 <span class="team-name">${f.HomeTeam}</span>
             </div>
-            ${scoreDisplay(f)}
+            ${scoreHtml}
             <div class="team ${f.Winner === f.AwayTeam ? 'team-winner' : ''}">
-                ${awayFlagUrl ? `<img class="team-flag" src="${awayFlagUrl}" alt="${f.AwayTeam}" onerror="this.style.display='none'" />` : '<span class="flag-placeholder">🏳</span>'}
+                ${aFlag ? `<img class="team-flag" src="${aFlag}" alt="${f.AwayTeam}" onerror="this.style.display='none'">` : '<span>🏳</span>'}
                 <span class="team-name">${f.AwayTeam}</span>
             </div>
         </div>
         <div style="display:flex;justify-content:center;margin-top:10px;">
-            <span class="fixture-status ${statusClass}">${statusLabel}</span>
+            <span class="fixture-status ${status}">${label}</span>
         </div>
     `;
     return card;
 }
 
-function formatKickoff(dateUtc) {
-    const d = new Date(dateUtc);
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-         + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' UTC';
-}
-
 function renderFixtures() {
-    const grid = document.getElementById('fixtureGrid');
+    const grid    = document.getElementById('fixtureGrid');
     grid.innerHTML = '';
 
-    // Filter out fully completed past matches
     const visible = allFixtures.filter(f => !isMatchOver(f));
-
     if (!visible.length) {
         grid.innerHTML = `<div class="no-fixtures">No upcoming fixtures right now.</div>`;
         return;
     }
 
-    // Group by round
     const byRound = {};
     visible.forEach(f => {
-        const r = f.RoundNumber;
-        if (!byRound[r]) byRound[r] = [];
-        byRound[r].push(f);
+        if (!byRound[f.RoundNumber]) byRound[f.RoundNumber] = [];
+        byRound[f.RoundNumber].push(f);
     });
 
-    const rounds = Object.keys(byRound).map(Number).sort((a, b) => a - b);
-
-    // Flatten with round headers, then paginate
-    const flatItems = []; // { type: 'header'|'card', data }
-    rounds.forEach(r => {
+    const flatItems = [];
+    Object.keys(byRound).map(Number).sort((a,b) => a-b).forEach(r => {
         flatItems.push({ type: 'header', label: ROUND_LABELS[r] || `Round ${r}` });
         byRound[r].forEach(f => flatItems.push({ type: 'card', data: f }));
     });
 
-    // Count cards only for pagination
-    const cards = flatItems.filter(i => i.type === 'card');
-    const totalCards  = cards.length;
-    const totalPages  = Math.ceil(totalCards / PAGE_SIZE);
-    currentPage = Math.min(currentPage, totalPages || 1);
+    const cards      = flatItems.filter(i => i.type === 'card');
+    const totalPages = Math.ceil(cards.length / PAGE_SIZE) || 1;
+    currentPage      = Math.min(currentPage, totalPages);
 
-    const startCard = (currentPage - 1) * PAGE_SIZE;
-    const endCard   = startCard + PAGE_SIZE;
-    const pageCards = new Set(cards.slice(startCard, endCard).map(i => i.data));
+    const pageSet = new Set(
+        cards.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map(i => i.data)
+    );
 
-    // Render: only show round header if at least one card in that round is on this page
-    let lastRound = null;
+    let pendingHeader = null;
     flatItems.forEach(item => {
-        if (item.type === 'header') {
-            lastRound = item.label;
-            return;
-        }
-        if (!pageCards.has(item.data)) return;
-
-        // Inject round header before first card of that round on this page
-        if (lastRound) {
+        if (item.type === 'header') { pendingHeader = item.label; return; }
+        if (!pageSet.has(item.data)) return;
+        if (pendingHeader) {
             const hdr = document.createElement('div');
             hdr.className = 'round-header';
-            hdr.textContent = lastRound;
+            hdr.textContent = pendingHeader;
             grid.appendChild(hdr);
-            lastRound = null;
+            pendingHeader = null;
         }
         grid.appendChild(buildFixtureCard(item.data));
     });
 
-    // Pagination controls
     if (totalPages > 1) {
         const pag = document.createElement('div');
         pag.className = 'pagination';
         pag.innerHTML = `
             <button class="pag-btn" id="pagPrev" ${currentPage <= 1 ? 'disabled' : ''}>← Prev</button>
-            <span class="pag-info">Page ${currentPage} / ${totalPages}
-                <small>(${totalCards} matches)</small>
-            </span>
+            <span class="pag-info">Page ${currentPage} / ${totalPages}<small>${cards.length} matches</small></span>
             <button class="pag-btn" id="pagNext" ${currentPage >= totalPages ? 'disabled' : ''}>See More →</button>
         `;
         grid.appendChild(pag);
-
         pag.querySelector('#pagPrev').addEventListener('click', () => {
-            currentPage--;
-            renderFixtures();
+            currentPage--; renderFixtures();
             document.querySelector('.fixture-section').scrollIntoView({ behavior: 'smooth' });
         });
         pag.querySelector('#pagNext').addEventListener('click', () => {
-            currentPage++;
-            renderFixtures();
+            currentPage++; renderFixtures();
             document.querySelector('.fixture-section').scrollIntoView({ behavior: 'smooth' });
         });
     }
@@ -396,60 +312,63 @@ function renderFixtures() {
 
 async function loadFixtures() {
     const grid = document.getElementById('fixtureGrid');
+    grid.innerHTML = '<div class="fixture-loading">Loading fixtures...</div>';
     try {
         const res = await fetch(FIXTURE_URL);
-        if (!res.ok) throw new Error('not found');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         allFixtures = await res.json();
         currentPage = 1;
         renderFixtures();
-    } catch {
-        grid.innerHTML = `<div class="no-fixtures">Fixture data will be available soon.</div>`;
+    } catch (err) {
+        console.error('Fixture load error:', err);
+        grid.innerHTML = `<div class="no-fixtures">Could not load fixtures. (${err.message})</div>`;
     }
 }
 
-// ── Supabase Live Chat ────────────────────────
+/* ─────────────────────────────────────────────
+   SUPABASE LIVE CHAT
+───────────────────────────────────────────── */
 
-const SUPABASE_URL  = 'https://vfcdttehaxqizeklyzib.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmY2R0dGVoYXhxaXpla2x5emliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NDQ2NTQsImV4cCI6MjA5NzAyMDY1NH0.ScVBWDl5nInSLHBQ5MaeIGPz41PTrUO6ab3GzNCBsR8';
+const SB_URL  = 'https://vfcdttehaxqizeklyzib.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmY2R0dGVoYXhxaXpla2x5emliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NDQ2NTQsImV4cCI6MjA5NzAyMDY1NH0.ScVBWDl5nInSLHBQ5MaeIGPz41PTrUO6ab3GzNCBsR8';
 
-const HEADERS = {
-    'apikey': SUPABASE_ANON,
-    'Authorization': `Bearer ${SUPABASE_ANON}`,
-    'Content-Type': 'application/json'
+const SB_HEADERS = {
+    'apikey':        SB_ANON,
+    'Authorization': `Bearer ${SB_ANON}`,
+    'Content-Type':  'application/json'
 };
 
-let chatUsername  = null;
-let lastMsgId     = 0;
-let pollInterval  = null;
-const MAX_MSGS    = 80;
+let chatUser     = null;
+let lastMsgId    = 0;
+let pollTimer    = null;
+const MAX_MSGS   = 80;
 
-// Avatar color from name
 function nameColor(name) {
-    let hash = 0;
-    for (const c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
-    const h = Math.abs(hash) % 360;
-    return `hsl(${h}, 60%, 55%)`;
+    let h = 0;
+    for (const c of name) h = c.charCodeAt(0) + ((h << 5) - h);
+    return `hsl(${Math.abs(h) % 360}, 60%, 55%)`;
 }
 
-function initials(name) {
-    return name.trim().slice(0, 2).toUpperCase();
-}
+function initials(name) { return name.trim().slice(0, 2).toUpperCase(); }
 
 function timeLabel(iso) {
-    const d = new Date(iso);
-    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-function buildMsgEl(msg, isSelf) {
-    const div = document.createElement('div');
-    div.className = `chat-msg ${isSelf ? 'chat-msg-self' : ''}`;
-    div.dataset.id = msg.id;
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-    const color = nameColor(msg.name);
-    div.innerHTML = `
-        <div class="chat-avatar" style="background:${color};">${initials(msg.name)}</div>
+function buildMsgEl(msg) {
+    const isSelf = msg.name === chatUser;
+    const color  = nameColor(msg.name);
+    const div    = document.createElement('div');
+    div.className  = `chat-msg${isSelf ? ' chat-msg-self' : ''}`;
+    div.dataset.id = msg.id;
+    div.innerHTML  = `
+        <div class="chat-avatar" style="background:${color}">${initials(msg.name)}</div>
         <div class="chat-bubble-wrap">
-            <span class="chat-name-label" style="color:${color};">${escHtml(msg.name)}</span>
+            <span class="chat-name-label" style="color:${color}">${escHtml(msg.name)}</span>
             <div class="chat-bubble">${escHtml(msg.message)}</div>
             <span class="chat-time">${timeLabel(msg.created_at)}</span>
         </div>
@@ -457,29 +376,28 @@ function buildMsgEl(msg, isSelf) {
     return div;
 }
 
-function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function scrollToBottom() {
+function chatScrollBottom() {
     const box = document.getElementById('chatMessages');
     if (box) box.scrollTop = box.scrollHeight;
 }
 
-async function fetchMessages(since = 0) {
-    const url = `${SUPABASE_URL}/rest/v1/chat_messages?select=*&id=gt.${since}&order=id.asc&limit=50`;
-    const res = await fetch(url, { headers: HEADERS });
-    if (!res.ok) throw new Error('fetch failed');
+async function sbFetch(since) {
+    const url = `${SB_URL}/rest/v1/chat_messages?select=*&id=gt.${since}&order=id.asc&limit=50`;
+    const res = await fetch(url, { headers: SB_HEADERS });
+    if (!res.ok) throw new Error(`Supabase fetch ${res.status}`);
     return res.json();
 }
 
-async function sendMessage(name, message) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/chat_messages`, {
+async function sbSend(name, message) {
+    const res = await fetch(`${SB_URL}/rest/v1/chat_messages`, {
         method: 'POST',
-        headers: { ...HEADERS, 'Prefer': 'return=representation' },
+        headers: { ...SB_HEADERS, 'Prefer': 'return=representation' },
         body: JSON.stringify({ name, message })
     });
-    if (!res.ok) throw new Error('send failed');
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Supabase insert ${res.status}: ${errText}`);
+    }
     return res.json();
 }
 
@@ -487,79 +405,74 @@ async function loadInitialMessages() {
     const box = document.getElementById('chatMessages');
     box.innerHTML = '';
     try {
-        // Load last MAX_MSGS messages
-        const url = `${SUPABASE_URL}/rest/v1/chat_messages?select=*&order=id.desc&limit=${MAX_MSGS}`;
-        const res = await fetch(url, { headers: HEADERS });
-        const msgs = await res.json();
-        msgs.reverse();
+        const url = `${SB_URL}/rest/v1/chat_messages?select=*&order=id.desc&limit=${MAX_MSGS}`;
+        const res = await fetch(url, { headers: SB_HEADERS });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const msgs = (await res.json()).reverse();
 
-        if (msgs.length === 0) {
-            box.innerHTML = `<div class="chat-empty">No messages yet. Say hi! 👋</div>`;
+        if (!msgs.length) {
+            box.innerHTML = `<div class="chat-empty">No messages yet — say hi! 👋</div>`;
         } else {
-            msgs.forEach(m => {
-                box.appendChild(buildMsgEl(m, m.name === chatUsername));
-            });
+            msgs.forEach(m => box.appendChild(buildMsgEl(m)));
             lastMsgId = msgs[msgs.length - 1].id;
         }
-        scrollToBottom();
+        chatScrollBottom();
     } catch (e) {
-        box.innerHTML = `<div class="chat-empty">Could not load messages.</div>`;
+        console.error('Chat load error:', e);
+        box.innerHTML = `<div class="chat-empty">Could not load chat. Check console.</div>`;
     }
 }
 
 function startPolling() {
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(async () => {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
         try {
-            const msgs = await fetchMessages(lastMsgId);
+            const msgs = await sbFetch(lastMsgId);
             if (!msgs.length) return;
 
-            const box = document.getElementById('chatMessages');
-            const emptyEl = box.querySelector('.chat-empty');
-            if (emptyEl) emptyEl.remove();
-
+            const box     = document.getElementById('chatMessages');
             const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+            box.querySelector('.chat-empty')?.remove();
 
             msgs.forEach(m => {
                 if (box.querySelector(`[data-id="${m.id}"]`)) return;
-                box.appendChild(buildMsgEl(m, m.name === chatUsername));
+                box.appendChild(buildMsgEl(m));
                 lastMsgId = Math.max(lastMsgId, m.id);
             });
 
-            // Trim old messages
-            const allMsgs = box.querySelectorAll('.chat-msg');
-            if (allMsgs.length > MAX_MSGS) {
-                for (let i = 0; i < allMsgs.length - MAX_MSGS; i++) allMsgs[i].remove();
+            // trim overflow
+            const all = box.querySelectorAll('.chat-msg');
+            if (all.length > MAX_MSGS) {
+                for (let i = 0; i < all.length - MAX_MSGS; i++) all[i].remove();
             }
 
-            if (atBottom) scrollToBottom();
-        } catch {}
+            if (atBottom) chatScrollBottom();
+        } catch (e) { console.warn('Poll error:', e); }
     }, 2500);
 }
 
 async function handleSend() {
     const input = document.getElementById('chatMsgInput');
-    const msg = input.value.trim();
-    if (!msg || !chatUsername) return;
+    const text  = input.value.trim();
+    if (!text || !chatUser) return;
 
-    input.value = '';
+    input.value    = '';
     input.disabled = true;
 
     try {
-        await sendMessage(chatUsername, msg);
-        // Immediately poll for new messages
-        const msgs = await fetchMessages(lastMsgId);
-        const box = document.getElementById('chatMessages');
-        const emptyEl = box.querySelector('.chat-empty');
-        if (emptyEl) emptyEl.remove();
+        await sbSend(chatUser, text);
+        const msgs = await sbFetch(lastMsgId);
+        const box  = document.getElementById('chatMessages');
+        box.querySelector('.chat-empty')?.remove();
         msgs.forEach(m => {
             if (box.querySelector(`[data-id="${m.id}"]`)) return;
-            box.appendChild(buildMsgEl(m, m.name === chatUsername));
+            box.appendChild(buildMsgEl(m));
             lastMsgId = Math.max(lastMsgId, m.id);
         });
-        scrollToBottom();
-    } catch {
-        input.value = msg; // restore on failure
+        chatScrollBottom();
+    } catch (e) {
+        console.error('Send error:', e);
+        input.value = text;
     } finally {
         input.disabled = false;
         input.focus();
@@ -567,21 +480,22 @@ async function handleSend() {
 }
 
 function joinChat(name) {
-    chatUsername = name.trim();
-    localStorage.setItem('chatUsername', chatUsername);
+    chatUser = name.trim();
+    localStorage.setItem('chatUsername', chatUser);
 
     document.getElementById('chatNamePrompt').style.display = 'none';
-    document.getElementById('chatUi').style.display = 'flex';
-    document.getElementById('chatUserBadge').textContent = chatUsername;
-    document.getElementById('chatUserBadge').style.background = nameColor(chatUsername);
+    document.getElementById('chatUi').style.display         = 'flex';
+
+    const badge = document.getElementById('chatUserBadge');
+    badge.textContent        = chatUser;
+    badge.style.background   = nameColor(chatUser);
+
+    document.getElementById('onlineCount').textContent =
+        Math.floor(Math.random() * 40) + 10;
 
     loadInitialMessages();
     startPolling();
 
-    // Online count (approx: random between real-ish range)
-    document.getElementById('onlineCount').textContent = Math.floor(Math.random() * 40) + 10;
-
-    // Send btn
     document.getElementById('chatSendBtn').addEventListener('click', handleSend);
     document.getElementById('chatMsgInput').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -589,41 +503,43 @@ function joinChat(name) {
 }
 
 function initChat() {
-    const saved = localStorage.getItem('chatUsername');
-
     document.getElementById('chatNameSubmit').addEventListener('click', () => {
-        const val = document.getElementById('chatNameInput').value.trim();
-        if (val.length < 1) return;
-        joinChat(val);
+        const v = document.getElementById('chatNameInput').value.trim();
+        if (v) joinChat(v);
     });
     document.getElementById('chatNameInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-            const val = e.target.value.trim();
-            if (val.length < 1) return;
-            joinChat(val);
+            const v = e.target.value.trim();
+            if (v) joinChat(v);
         }
     });
 
+    const saved = localStorage.getItem('chatUsername');
     if (saved) {
         document.getElementById('chatNameInput').value = saved;
         joinChat(saved);
     }
 }
 
-// ── Init ─────────────────────────────────────
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
 
 async function init() {
+    // Load channels
     try {
         const res = await fetch(CHANNELS_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         channels = await res.json();
         buildChannelStrip(channels);
         if (channels.length > 0) loadChannel(0);
     } catch (err) {
-        console.error('Failed to load channels:', err);
+        console.error('Channel load error:', err);
         document.getElementById('channelStrip').innerHTML =
             '<span style="color:#666;font-size:12px;padding:0 16px;">Could not load channels</span>';
     }
 
+    // Chat + Fixtures in parallel
     initChat();
     loadFixtures();
 }
