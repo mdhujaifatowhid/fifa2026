@@ -3,38 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIFA 2026 IPTV Portal</title>
+    <title>FIFA 2026 — Live TV</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <!-- Shaka Player for DASH + DRM -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js"></script>
+    <!-- HLS.js for HLS streams -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
 </head>
 <body>
 
-    <header class="navbar">
-        <div class="logo">FIFA '26 IPTV</div>
-        <nav class="channels-nav" id="channels-container"></nav>
-    </header>
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">⚽</span>
+            <span class="brand-text">FIFA <em>2026</em></span>
+        </div>
+        <div class="channel-strip" id="channelStrip">
+            <!-- Channels injected by JS -->
+        </div>
+        <div class="nav-live-badge">
+            <span class="dot"></span> LIVE
+        </div>
+    </nav>
 
-    <main class="container">
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- PLAYER SECTION -->
         <section class="player-section">
-            <div class="player-wrapper">
-                <video id="live-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" width="100%"></video>
+            <div class="player-header">
+                <div class="now-playing" id="nowPlaying">
+                    <img id="activeChannelLogo" src="" alt="" class="active-logo" />
+                    <span id="activeChannelName">Select a channel to start</span>
+                </div>
+                <div class="player-controls-hint">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    Fullscreen available
+                </div>
             </div>
-            <h2 id="current-channel-title" class="channel-title">Select a Channel</h2>
+
+            <div class="player-wrapper">
+                <div class="player-placeholder" id="playerPlaceholder">
+                    <div class="placeholder-inner">
+                        <div class="trophy-icon">🏆</div>
+                        <p class="placeholder-title">FIFA World Cup 2026</p>
+                        <p class="placeholder-sub">Select a channel from the navbar to start watching</p>
+                    </div>
+                </div>
+                <video id="videoPlayer" controls playsinline></video>
+            </div>
         </section>
 
-        <section class="fixtures-section">
-            <h3 class="section-title">Match Fixtures</h3>
-            <div class="fixtures-grid" id="fixtures-container"></div>
+        <!-- FIXTURE SECTION -->
+        <section class="fixture-section">
+            <div class="section-header">
+                <h2 class="section-title">Fixtures & Results</h2>
+                <span class="section-line"></span>
+            </div>
+            <div class="fixture-grid" id="fixtureGrid">
+                <div class="fixture-loading">Loading fixtures...</div>
+            </div>
         </section>
+
     </main>
 
+    <!-- FOOTER -->
     <footer class="footer">
-        <p>Designed & Developed by <span class="creator-name">Hujaifa.fun</span></p>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-ball">⚽</span>
+                <span>FIFA 2026 Live TV</span>
+            </div>
+            <div class="footer-credit">
+                Crafted with passion by <strong>MD Hujaifa Towhid</strong>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 — All streams are publicly available. No copyright infringement intended.
+            </div>
+        </div>
     </footer>
 
-    <!-- Video.js and Plugins -->
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.1/dist/videojs-contrib-eme.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
