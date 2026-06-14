@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIFA 2026 IPTV Portal</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/shaka-player/4.3.5/controls.css">
 </head>
 <body>
 
@@ -17,9 +17,15 @@
     </header>
 
     <main class="container">
+        
         <section class="player-section">
-            <div class="player-wrapper">
-                <video id="live-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
+            <div class="player-wrapper" id="video-container">
+                <video 
+                    id="live-player" 
+                    class="shaka-video"
+                    autoplay 
+                    playsinline>
+                </video>
             </div>
             <h2 id="current-channel-title" class="channel-title">Select a Channel</h2>
         </section>
@@ -30,14 +36,15 @@
                 <p class="loading-text">Loading Fixtures...</p>
             </div>
         </section>
+
     </main>
 
     <footer class="footer">
         <p>Designed & Developed with ❤️ by <span class="creator-name">Hujaifa.fun</span></p>
     </footer>
 
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.1/dist/videojs-contrib-eme.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/shaka-player/4.3.5/shaka-player.ui.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
