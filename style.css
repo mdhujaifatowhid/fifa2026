@@ -1,215 +1,510 @@
-/* Modern Minimalist Reset & Variables */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+/* =============================================
+   FIFA 2026 LIVE TV — Black & White Classy
+   ============================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap');
+
+/* --- TOKENS --- */
 :root {
-    --bg-color: #0a0a0a;
-    --card-bg: #141414;
-    --border-color: #262626;
-    --text-primary: #ffffff;
-    --text-secondary: #a3a3a3;
-    --accent-white: #ffffff;
-    --accent-hover: #1f1f1f;
+    --black:    #0a0a0a;
+    --gray-900: #111111;
+    --gray-800: #1a1a1a;
+    --gray-700: #242424;
+    --gray-600: #333333;
+    --gray-400: #666666;
+    --gray-200: #aaaaaa;
+    --gray-100: #cccccc;
+    --white:    #f5f5f5;
+    --gold:     #c9a84c;
+    --gold-dim: #8a6f2e;
+
+    --nav-h: 64px;
+    --radius: 4px;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Inter', sans-serif;
 }
 
+/* --- RESET --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 body {
-    background-color: var(--bg-color);
-    color: var(--text-primary);
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    overflow-x: hidden;
 }
 
-/* Navbar Style */
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--gray-900); }
+::-webkit-scrollbar-thumb { background: var(--gray-600); border-radius: 3px; }
+
+/* =============================================
+   NAVBAR
+   ============================================= */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: rgba(20, 20, 20, 0.75);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 100;
-}
-
-.logo {
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.channels-nav {
+    height: var(--nav-h);
+    background: var(--gray-900);
+    border-bottom: 1px solid var(--gray-700);
     display: flex;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0;
+    padding: 0 20px;
+    overflow: hidden;
 }
 
-.chan-btn {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    padding: 0.5rem 1.2rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-right: 24px;
+    border-right: 1px solid var(--gray-700);
+    margin-right: 16px;
 }
 
-.chan-btn:hover, .chan-btn.active {
-    background-color: var(--accent-white);
-    color: var(--bg-color);
-    border-color: var(--accent-white);
-    box-shadow: 0px 4px 20px rgba(255, 255, 255, 0.15);
+.brand-icon {
+    font-size: 22px;
 }
 
-/* Main Layout */
-.container {
+.brand-text {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    color: var(--white);
+    white-space: nowrap;
+}
+
+.brand-text em {
+    color: var(--gold);
+    font-style: normal;
+}
+
+.channel-strip {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
     flex: 1;
-    max-width: 1400px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2.5rem;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding: 6px 0;
 }
 
-/* Video Player - Maximized Frame Layout */
-.player-section {
-    width: 100%;
+.channel-strip::-webkit-scrollbar { display: none; }
+
+.channel-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--gray-700);
+    border-radius: var(--radius);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    flex-shrink: 0;
+    color: var(--gray-200);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+}
+
+.channel-btn:hover {
+    background: var(--gray-800);
+    border-color: var(--gray-400);
+    color: var(--white);
+}
+
+.channel-btn.active {
+    background: var(--white);
+    border-color: var(--white);
+    color: var(--black);
+}
+
+.channel-btn img {
+    width: 24px;
+    height: 18px;
+    object-fit: contain;
+    filter: grayscale(30%);
+}
+
+.channel-btn.active img {
+    filter: none;
+}
+
+.nav-live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 16px;
+    padding-left: 20px;
+    border-left: 1px solid var(--gray-700);
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--gray-200);
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #e53e3e;
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* =============================================
+   MAIN
+   ============================================= */
+.main {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
+}
+
+/* =============================================
+   PLAYER SECTION
+   ============================================= */
+.player-section {
+    background: var(--black);
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-700);
+}
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.now-playing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.active-logo {
+    width: 36px;
+    height: 28px;
+    object-fit: contain;
+    display: none;
+}
+
+#activeChannelName {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    color: var(--gray-200);
+}
+
+.player-controls-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 0.04em;
 }
 
 .player-wrapper {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9; /* Enforces 16:9 ratio */
-    max-height: 75vh; /* Prevents push down on desktop screens */
-    background: #000;
-    border-radius: 12px;
+    /* 16:9 but max out the viewport */
+    aspect-ratio: 16 / 9;
+    max-height: calc(100vh - var(--nav-h) - 120px);
+    background: var(--gray-900);
+    border: 1px solid var(--gray-700);
+    border-radius: var(--radius);
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }
 
-/* Integrating Video.js fluid sizing override */
-.video-js {
-    width: 100% !important;
-    height: 100% !important;
+.player-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-900);
+    z-index: 2;
 }
 
-.channel-title {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin-top: 0.5rem;
-    border-left: 3px solid var(--accent-white);
-    padding-left: 10px;
+.placeholder-inner {
+    text-align: center;
+    padding: 40px;
 }
 
-/* Fixtures Section */
-.fixtures-section {
+.trophy-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    opacity: 0.7;
+}
+
+.placeholder-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    margin-bottom: 8px;
+}
+
+.placeholder-sub {
+    font-size: 13px;
+    color: var(--gray-400);
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+#videoPlayer {
+    position: absolute;
+    inset: 0;
     width: 100%;
+    height: 100%;
+    background: #000;
+    display: none;
+}
+
+/* =============================================
+   FIXTURE SECTION
+   ============================================= */
+.fixture-section {
+    padding: 32px 24px 40px;
+    background: var(--gray-900);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
 .section-title {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    color: var(--text-primary);
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    white-space: nowrap;
 }
 
-.fixtures-grid {
+.section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--gray-600), transparent);
+}
+
+.fixture-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+}
+
+.fixture-loading {
+    color: var(--gray-400);
+    font-size: 13px;
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 0;
 }
 
 .fixture-card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    background: var(--gray-800);
+    border: 1px solid var(--gray-700);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    transition: border-color 0.15s, background 0.15s;
 }
 
 .fixture-card:hover {
-    border-color: #404040;
-    transform: translateY(-2px);
+    border-color: var(--gray-400);
+    background: var(--gray-700);
 }
 
-.match-info {
+.fixture-meta {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    align-items: center;
+    margin-bottom: 14px;
 }
 
-.match-teams {
+.fixture-group {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    text-transform: uppercase;
+}
+
+.fixture-datetime {
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 0.04em;
+}
+
+.fixture-teams {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.team {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    font-size: 1.05rem;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.team-flag {
+    width: 40px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 2px;
+}
+
+.team-name {
+    font-size: 12px;
     font-weight: 600;
-}
-
-.match-vs {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-    margin: 2px 0;
-}
-
-/* Footer Style */
-.footer {
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--border-color);
+    letter-spacing: 0.04em;
+    color: var(--white);
     text-align: center;
-    padding: 1.5rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
 }
 
-.creator-name {
-    color: var(--text-primary);
+.fixture-vs {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    color: var(--gray-600);
+    flex-shrink: 0;
+    padding: 0 4px;
+}
+
+.fixture-venue {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--gray-400);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fixture-status {
+    display: inline-block;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-top: 10px;
 }
 
-.loading-text {
-    color: var(--text-secondary);
-    font-style: italic;
+.fixture-status.live {
+    background: #e53e3e22;
+    color: #e53e3e;
+    border: 1px solid #e53e3e44;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .navbar {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-    }
-    .channels-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    .chan-btn {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-    }
+.fixture-status.upcoming {
+    background: var(--gray-700);
+    color: var(--gray-400);
+    border: 1px solid var(--gray-600);
+}
+
+.fixture-status.finished {
+    background: var(--gray-700);
+    color: var(--gray-200);
+    border: 1px solid var(--gray-600);
+}
+
+.no-fixtures {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--gray-400);
+    padding: 48px 0;
+    font-size: 13px;
+}
+
+/* =============================================
+   FOOTER
+   ============================================= */
+.footer {
+    background: var(--black);
+    border-top: 1px solid var(--gray-700);
+    padding: 24px;
+}
+
+.footer-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    color: var(--white);
+}
+
+.footer-ball {
+    font-size: 16px;
+}
+
+.footer-credit {
+    font-size: 13px;
+    color: var(--gray-200);
+}
+
+.footer-credit strong {
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.footer-copy {
+    font-size: 11px;
+    color: var(--gray-400);
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 600px) {
+    .navbar { padding: 0 12px; }
+    .nav-brand { padding-right: 12px; margin-right: 8px; }
+    .brand-text { font-size: 18px; }
+    .nav-live-badge { display: none; }
+    .player-section { padding: 12px; }
+    .fixture-section { padding: 20px 12px 32px; }
+    .fixture-grid { grid-template-columns: 1fr; }
+    .section-title { font-size: 20px; }
 }
