@@ -366,7 +366,6 @@ function buildMsgEl(msg) {
     div.className  = `chat-msg${isSelf ? ' chat-msg-self' : ''}`;
     div.dataset.id = msg.id;
     div.innerHTML  = `
-        <div class="chat-avatar" style="background:${color}">${initials(msg.name)}</div>
         <div class="chat-bubble-wrap">
             <span class="chat-name-label" style="color:${color}">${escHtml(msg.name)}</span>
             <div class="chat-bubble">${escHtml(msg.message)}</div>
