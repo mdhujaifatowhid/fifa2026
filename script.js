@@ -1,84 +1,232 @@
-const url="https://raw.githubusercontent.com/mdhujaifatowhid/fifa2026/main/fifa.json";
+const jsonURL =
+"https://raw.githubusercontent.com/mdhujaifatowhid/fifa2026/main/fifa.json";
 
-let channels=[];
+let channels = [];
 
-fetch(url)
-.then(r=>r.json())
-.then(data=>{
-channels=data.filter(x=>!x.type); // public HLS/embed entries
-draw(channels);
+fetch(jsonURL)
+.then(res => res.json())
+.then(data => {
+
+    // DASH entries hide
+    channels = data.filter(x => !x.type);
+
+    draw(channels);
+
+})
+.catch(err=>{
+    console.log(err);
 });
 
-function draw(arr){
 
-const list=document.getElementById("list");
+// --------------------
+// DRAW CHANNELS
+// --------------------
 
-list.innerHTML="";
+function draw(list){
 
-arr.forEach(ch=>{
+    const container =
+    document.getElementById("channels");
 
-const d=document.createElement("div");
+    container.innerHTML = "";
 
-d.className="card";
+    list.forEach(channel=>{
 
-d.innerHTML=`
-<img src="${ch.logo||''}">
-<div>${ch.name}</div>
-`;
+        const card =
+        document.createElement("div");
 
-d.onclick=()=>play(ch);
+        card.className =
+        "channel-card";
 
-list.appendChild(d);
+        card.innerHTML = `
+
+        <img
+        src="${channel.logo || ''}"
+        onerror="this.src='https://placehold.co/300x150/111827/ffffff?text=TV'"
+        >
+
+        <h3>${channel.name}</h3>
+
+        <p>
+        ${channel.group || "LIVE"}
+        </p>
+
+        `;
+
+        card.onclick = ()=>{
+
+            play(channel);
+
+        };
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+// --------------------
+// SEARCH
+// --------------------
+
+document
+.getElementById("search")
+.addEventListener("input",function(){
+
+    const q =
+    this.value.toLowerCase();
+
+    const result =
+    channels.filter(c=>
+
+        c.name
+        .toLowerCase()
+        .includes(q)
+
+    );
+
+    draw(result);
 
 });
 
+
+// --------------------
+// PLAY
+// --------------------
+
+function play(channel){
+
+    document
+    .getElementById(
+    "currentTitle"
+    )
+    .innerText =
+    channel.name;
+
+    const video =
+    document
+    .getElementById(
+    "video"
+    );
+
+    const frame =
+    document
+    .getElementById(
+    "frame"
+    );
+
+    frame.innerHTML = "";
+
+    video.style.display =
+    "block";
+
+    video.pause();
+
+
+
+    // EMBED
+
+    if(
+        channel.url
+        .includes("embed")
+    ){
+
+        video.style.display =
+        "none";
+
+        frame.innerHTML =
+
+        `
+
+        <iframe
+
+        src="${channel.url}"
+
+        allowfullscreen
+
+        loading="lazy"
+
+        >
+
+        </iframe>
+
+        `;
+
+        return;
+
+    }
+
+
+
+    // HLS
+
+    if(
+        Hls.isSupported()
+    ){
+
+        const hls =
+        new Hls();
+
+        hls.loadSource(
+        channel.url
+        );
+
+        hls.attachMedia(
+        video
+        );
+
+        hls.on(
+        Hls.Events.MANIFEST_PARSED,
+
+        ()=>{
+
+            video.play();
+
+        });
+
+    }
+
+    else if(
+
+        video.canPlayType(
+        "application/vnd.apple.mpegurl"
+        )
+
+    ){
+
+        video.src =
+        channel.url;
+
+        video.play();
+
+    }
+
+    else{
+
+        alert(
+        "Stream not supported."
+        );
+
+    }
+
 }
 
-document.getElementById("search").oninput=function(){
 
-const q=this.value.toLowerCase();
 
-draw(
-channels.filter(
-x=>x.name.toLowerCase().includes(q)
-)
-);
+// --------------------
+// AUTO PLAY FIRST
+// --------------------
 
-};
+setTimeout(()=>{
 
-function play(ch){
+    if(
+    channels.length
+    ){
 
-const video=document.getElementById("video");
-const frame=document.getElementById("frame");
+    play(
+    channels[0]
+    );
 
-frame.innerHTML="";
-video.style.display="block";
+    }
 
-if(ch.url.includes("embed")){
-
-video.pause();
-
-video.style.display="none";
-
-frame.innerHTML=
-`<iframe src="${ch.url}" allowfullscreen></iframe>`;
-
-return;
-
-}
-
-if(Hls.isSupported()){
-
-const hls=new Hls();
-
-hls.loadSource(ch.url);
-
-hls.attachMedia(video);
-
-}else{
-
-video.src=ch.url;
-
-}
-
-}
+},1000);
