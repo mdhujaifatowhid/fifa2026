@@ -1,232 +1,277 @@
-const jsonURL =
+const JSON_URL =
 "https://raw.githubusercontent.com/mdhujaifatowhid/fifa2026/main/fifa.json";
 
-let channels = [];
+let allChannels = [];
 
-fetch(jsonURL)
-.then(res => res.json())
-.then(data => {
+const video =
+document.getElementById("video");
 
-    // DASH entries hide
-    channels = data.filter(x => !x.type);
+const frame =
+document.getElementById("frame");
 
-    draw(channels);
+const title =
+document.getElementById("currentTitle");
+
+const search =
+document.getElementById("search");
+
+const grid =
+document.getElementById("channels");
+
+
+
+// LOAD
+
+fetch(JSON_URL)
+
+.then(res=>res.json())
+
+.then(data=>{
+
+    allChannels=
+
+    data.filter(
+
+    x=>!x.type
+
+    );
+
+    render(allChannels);
+
+    if(allChannels.length){
+
+        play(allChannels[0]);
+
+    }
 
 })
+
 .catch(err=>{
-    console.log(err);
+
+console.log(err);
+
+grid.innerHTML=
+
+"<h2>Failed to load channels.</h2>";
+
 });
 
 
-// --------------------
-// DRAW CHANNELS
-// --------------------
 
-function draw(list){
+// RENDER
 
-    const container =
-    document.getElementById("channels");
+function render(list){
 
-    container.innerHTML = "";
+grid.innerHTML="";
 
-    list.forEach(channel=>{
+list.forEach(ch=>{
 
-        const card =
-        document.createElement("div");
+const card=
 
-        card.className =
-        "channel-card";
+document.createElement("div");
 
-        card.innerHTML = `
+card.className=
 
-        <img
-        src="${channel.logo || ''}"
-        onerror="this.src='https://placehold.co/300x150/111827/ffffff?text=TV'"
-        >
+"channel-card";
 
-        <h3>${channel.name}</h3>
+card.innerHTML=`
 
-        <p>
-        ${channel.group || "LIVE"}
-        </p>
+<img
 
-        `;
+src="${ch.logo}"
 
-        card.onclick = ()=>{
+onerror="this.src='https://placehold.co/300x120/111827/ffffff?text=TV'"
 
-            play(channel);
+>
 
-        };
+<h3>
 
-        container.appendChild(card);
+${ch.name}
 
-    });
+</h3>
+
+<p>
+
+${ch.group||"LIVE"}
+
+</p>
+
+`;
+
+card.onclick=()=>{
+
+play(ch);
+
+};
+
+grid.appendChild(card);
+
+});
 
 }
 
 
-// --------------------
+
 // SEARCH
-// --------------------
 
-document
-.getElementById("search")
-.addEventListener("input",function(){
+search.addEventListener(
 
-    const q =
-    this.value.toLowerCase();
+"input",
 
-    const result =
-    channels.filter(c=>
+function(){
 
-        c.name
-        .toLowerCase()
-        .includes(q)
+const q=
 
-    );
+this.value
 
-    draw(result);
+.toLowerCase();
 
-});
+const filtered=
+
+allChannels.filter(
+
+x=>
+
+x.name
+
+.toLowerCase()
+
+.includes(q)
+
+);
+
+render(filtered);
+
+}
+
+);
 
 
-// --------------------
+
 // PLAY
-// --------------------
 
-function play(channel){
+function play(ch){
 
-    document
-    .getElementById(
-    "currentTitle"
-    )
-    .innerText =
-    channel.name;
+title.innerText=
 
-    const video =
-    document
-    .getElementById(
-    "video"
-    );
+ch.name;
 
-    const frame =
-    document
-    .getElementById(
-    "frame"
-    );
+frame.innerHTML="";
 
-    frame.innerHTML = "";
+video.style.display=
 
-    video.style.display =
-    "block";
+"block";
 
-    video.pause();
+video.pause();
 
 
 
-    // EMBED
+// EMBED
 
-    if(
-        channel.url
-        .includes("embed")
-    ){
+if(
 
-        video.style.display =
-        "none";
+ch.url.includes(
 
-        frame.innerHTML =
+"embed"
 
-        `
+)
 
-        <iframe
+){
 
-        src="${channel.url}"
+video.style.display=
 
-        allowfullscreen
+"none";
 
-        loading="lazy"
+frame.innerHTML=
 
-        >
+`
 
-        </iframe>
+<iframe
 
-        `;
+src="${ch.url}"
 
-        return;
+allowfullscreen
 
-    }
+loading="lazy"
 
+>
 
+</iframe>
 
-    // HLS
+`;
 
-    if(
-        Hls.isSupported()
-    ){
-
-        const hls =
-        new Hls();
-
-        hls.loadSource(
-        channel.url
-        );
-
-        hls.attachMedia(
-        video
-        );
-
-        hls.on(
-        Hls.Events.MANIFEST_PARSED,
-
-        ()=>{
-
-            video.play();
-
-        });
-
-    }
-
-    else if(
-
-        video.canPlayType(
-        "application/vnd.apple.mpegurl"
-        )
-
-    ){
-
-        video.src =
-        channel.url;
-
-        video.play();
-
-    }
-
-    else{
-
-        alert(
-        "Stream not supported."
-        );
-
-    }
+return;
 
 }
 
 
 
-// --------------------
-// AUTO PLAY FIRST
-// --------------------
+// HLS
 
-setTimeout(()=>{
+if(
 
-    if(
-    channels.length
-    ){
+Hls.isSupported()
 
-    play(
-    channels[0]
-    );
+){
 
-    }
+const hls=
 
-},1000);
+new Hls();
+
+hls.loadSource(
+
+ch.url
+
+);
+
+hls.attachMedia(
+
+video
+
+);
+
+hls.on(
+
+Hls.Events
+
+.MANIFEST_PARSED,
+
+function(){
+
+video.play();
+
+}
+
+);
+
+}
+
+else if(
+
+video.canPlayType(
+
+'application/vnd.apple.mpegurl'
+
+)
+
+){
+
+video.src=
+
+ch.url;
+
+video.play();
+
+}
+
+else{
+
+alert(
+
+"Unsupported Stream"
+
+);
+
+}
+
+}
