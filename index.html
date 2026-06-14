@@ -64,6 +64,58 @@
             </div>
         </section>
 
+        <!-- এই section টা index.html-এ player-section-এর পরে, fixture-section-এর আগে বসাও -->
+
+<!-- LIVE CHAT -->
+<section class="chat-section" id="chatSection">
+  <div class="section-header">
+    <h2 class="section-title">💬 Live Chat</h2>
+    <span class="section-line"></span>
+    <button class="chat-toggle-btn" id="chatToggleBtn" title="Hide/Show Chat">
+      <svg id="chatToggleIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+      <span id="chatToggleText">Hide</span>
+    </button>
+  </div>
+
+  <div class="chat-body" id="chatBody">
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-empty" id="chatEmpty">
+        <span>⚽</span>
+        <p>Be the first to chat! Say something...</p>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <input
+        type="text"
+        id="chatNameInput"
+        class="chat-name-input"
+        placeholder="Your name"
+        maxlength="20"
+      />
+      <div class="chat-message-row">
+        <input
+          type="text"
+          id="chatMsgInput"
+          class="chat-msg-input"
+          placeholder="Type a message..."
+          maxlength="200"
+        />
+        <button class="chat-send-btn" id="chatSendBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
         <!-- FIXTURES -->
         <section class="fixture-section">
             <div class="section-header">
