@@ -647,7 +647,14 @@ body {
     box-shadow: none;
     cursor: not-allowed;
 }
-
+/* চ্যাট মেসেজের ভেতর কোনো অ্যাভাটার, আইকন বা গোল সার্কেল থাকলে তা হাইড করার জন্য */
+.chat-msg::before,
+.chat-msg-header::before,
+.chat-msg-header div,
+.chat-msg-header span:not(.chat-msg-name):not(.chat-msg-time),
+.chat-msg-header img {
+    display: none !important;
+}
 /* Mobile Adjustments */
 @media (max-width: 600px) {
     .chat-section { padding: 24px 12px 12px; }
