@@ -12,7 +12,6 @@
 
     <!-- NAVBAR: 2-row layout -->
     <nav class="navbar" id="navbar">
-        <!-- Row 1: Brand + Live badge -->
         <div class="nav-top">
             <div class="nav-brand">
                 <span class="brand-icon">⚽</span>
@@ -23,18 +22,13 @@
                 <span class="dot"></span> LIVE
             </div>
         </div>
-
-        <!-- Row 2: Channel cards -->
         <div class="channel-row">
             <button class="scroll-arrow left" id="scrollLeft" aria-label="Scroll left">&#8249;</button>
-            <div class="channel-strip" id="channelStrip">
-                <!-- Injected by JS -->
-            </div>
+            <div class="channel-strip" id="channelStrip"></div>
             <button class="scroll-arrow right" id="scrollRight" aria-label="Scroll right">&#8250;</button>
         </div>
     </nav>
 
-    <!-- MAIN -->
     <main class="main">
 
         <!-- PLAYER -->
@@ -50,7 +44,6 @@
                     Fullscreen
                 </div>
             </div>
-
             <div class="player-wrapper">
                 <div class="player-placeholder" id="playerPlaceholder">
                     <div class="placeholder-inner">
@@ -64,57 +57,38 @@
             </div>
         </section>
 
-        <!-- এই section টা index.html-এ player-section-এর পরে, fixture-section-এর আগে বসাও -->
+        <!-- LIVE CHAT -->
+        <section class="chat-section">
+            <div class="section-header">
+                <h2 class="section-title">Live Chat</h2>
+                <span class="section-line"></span>
+                <span class="chat-online" id="chatOnline">
+                    <span class="dot-sm" style="background:#22c55e;"></span>
+                    <span id="onlineCount">—</span> online
+                </span>
+            </div>
 
-<!-- LIVE CHAT -->
-<section class="chat-section" id="chatSection">
-  <div class="section-header">
-    <h2 class="section-title">💬 Live Chat</h2>
-    <span class="section-line"></span>
-    <button class="chat-toggle-btn" id="chatToggleBtn" title="Hide/Show Chat">
-      <svg id="chatToggleIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="18 15 12 9 6 15"></polyline>
-      </svg>
-      <span id="chatToggleText">Hide</span>
-    </button>
-  </div>
+            <!-- Name prompt -->
+            <div class="chat-name-prompt" id="chatNamePrompt">
+                <p class="chat-name-title">Enter your name to join the chat ⚽</p>
+                <div class="chat-name-row">
+                    <input type="text" id="chatNameInput" class="chat-input" placeholder="Your name..." maxlength="20" autocomplete="off" />
+                    <button class="chat-send-btn" id="chatNameSubmit">Join</button>
+                </div>
+            </div>
 
-  <div class="chat-body" id="chatBody">
-    <!-- Messages -->
-    <div class="chat-messages" id="chatMessages">
-      <div class="chat-empty" id="chatEmpty">
-        <span>⚽</span>
-        <p>Be the first to chat! Say something...</p>
-      </div>
-    </div>
-
-    <!-- Input -->
-    <div class="chat-input-area">
-      <input
-        type="text"
-        id="chatNameInput"
-        class="chat-name-input"
-        placeholder="Your name"
-        maxlength="20"
-      />
-      <div class="chat-message-row">
-        <input
-          type="text"
-          id="chatMsgInput"
-          class="chat-msg-input"
-          placeholder="Type a message..."
-          maxlength="200"
-        />
-        <button class="chat-send-btn" id="chatSendBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
+            <!-- Chat UI -->
+            <div class="chat-ui" id="chatUi" style="display:none;">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-loading">Connecting...</div>
+                </div>
+                <div class="chat-input-row">
+                    <span class="chat-user-badge" id="chatUserBadge"></span>
+                    <input type="text" id="chatMsgInput" class="chat-input" placeholder="Type a message..." maxlength="200" autocomplete="off" />
+                    <button class="chat-send-btn" id="chatSendBtn">Send</button>
+                </div>
+            </div>
+        </section>
 
         <!-- FIXTURES -->
         <section class="fixture-section">
