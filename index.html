@@ -13,17 +13,91 @@
 
 <body>
 
-<h1>⚽ FIFA TV</h1>
+```html
+<div class="app">
 
-<input id="search" placeholder="Search...">
+    <aside class="sidebar">
 
-<div id="list"></div>
+        <div class="logo">
+            <span class="ball">⚽</span>
+            <span>GoalCast</span>
+        </div>
 
-<video id="video" controls></video>
+        <nav>
+            <a class="active">All Channels</a>
+            <a>Favourites</a>
+            <a>Live Now</a>
+            <a>Sports</a>
+        </nav>
 
-<div id="frame"></div>
+        <div class="promo">
+            <h3>World Cup 2026</h3>
+            <p>Live Coverage</p>
+        </div>
 
-<script src="script.js"></script>
+    </aside>
+
+    <main class="content">
+
+        <section class="hero">
+
+            <div class="hero-content">
+                <span class="tag">WATCH LIVE</span>
+
+                <h1>FIFA World Cup<br>2026</h1>
+
+                <p>
+                    Watch football streams in one place.
+                </p>
+            </div>
+
+        </section>
+
+        <div class="topbar">
+
+            <input
+                type="text"
+                id="search"
+                placeholder="Search channels..."
+            >
+
+        </div>
+
+        <div id="channels" class="channel-grid"></div>
+
+    </main>
+
+    <aside class="player-panel">
+
+        <div class="player-card">
+
+            <video
+                id="video"
+                controls
+                autoplay
+            ></video>
+
+            <div id="frame"></div>
+
+            <div class="player-info">
+
+                <span class="live-dot"></span>
+
+                <div>
+                    <h3 id="currentTitle">
+                        Select a Channel
+                    </h3>
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+```
+
 
 </body>
 </html>
