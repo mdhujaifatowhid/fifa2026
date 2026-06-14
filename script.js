@@ -407,24 +407,224 @@ async function loadFixtures() {
     }
 }
 
-// ── Init: auto-play first channel ────────────
+// ── Supabase Live Chat ────────────────────────
+
+const SUPABASE_URL  = 'https://vfcdttehaxqizeklyzib.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmY2R0dGVoYXhxaXpla2x5emliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NDQ2NTQsImV4cCI6MjA5NzAyMDY1NH0.ScVBWDl5nInSLHBQ5MaeIGPz41PTrUO6ab3GzNCBsR8';
+
+const HEADERS = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': `Bearer ${SUPABASE_ANON}`,
+    'Content-Type': 'application/json'
+};
+
+let chatUsername  = null;
+let lastMsgId     = 0;
+let pollInterval  = null;
+const MAX_MSGS    = 80;
+
+// Avatar color from name
+function nameColor(name) {
+    let hash = 0;
+    for (const c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 60%, 55%)`;
+}
+
+function initials(name) {
+    return name.trim().slice(0, 2).toUpperCase();
+}
+
+function timeLabel(iso) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function buildMsgEl(msg, isSelf) {
+    const div = document.createElement('div');
+    div.className = `chat-msg ${isSelf ? 'chat-msg-self' : ''}`;
+    div.dataset.id = msg.id;
+
+    const color = nameColor(msg.name);
+    div.innerHTML = `
+        <div class="chat-avatar" style="background:${color};">${initials(msg.name)}</div>
+        <div class="chat-bubble-wrap">
+            <span class="chat-name-label" style="color:${color};">${escHtml(msg.name)}</span>
+            <div class="chat-bubble">${escHtml(msg.message)}</div>
+            <span class="chat-time">${timeLabel(msg.created_at)}</span>
+        </div>
+    `;
+    return div;
+}
+
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function scrollToBottom() {
+    const box = document.getElementById('chatMessages');
+    if (box) box.scrollTop = box.scrollHeight;
+}
+
+async function fetchMessages(since = 0) {
+    const url = `${SUPABASE_URL}/rest/v1/chat_messages?select=*&id=gt.${since}&order=id.asc&limit=50`;
+    const res = await fetch(url, { headers: HEADERS });
+    if (!res.ok) throw new Error('fetch failed');
+    return res.json();
+}
+
+async function sendMessage(name, message) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/chat_messages`, {
+        method: 'POST',
+        headers: { ...HEADERS, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ name, message })
+    });
+    if (!res.ok) throw new Error('send failed');
+    return res.json();
+}
+
+async function loadInitialMessages() {
+    const box = document.getElementById('chatMessages');
+    box.innerHTML = '';
+    try {
+        // Load last MAX_MSGS messages
+        const url = `${SUPABASE_URL}/rest/v1/chat_messages?select=*&order=id.desc&limit=${MAX_MSGS}`;
+        const res = await fetch(url, { headers: HEADERS });
+        const msgs = await res.json();
+        msgs.reverse();
+
+        if (msgs.length === 0) {
+            box.innerHTML = `<div class="chat-empty">No messages yet. Say hi! 👋</div>`;
+        } else {
+            msgs.forEach(m => {
+                box.appendChild(buildMsgEl(m, m.name === chatUsername));
+            });
+            lastMsgId = msgs[msgs.length - 1].id;
+        }
+        scrollToBottom();
+    } catch (e) {
+        box.innerHTML = `<div class="chat-empty">Could not load messages.</div>`;
+    }
+}
+
+function startPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        try {
+            const msgs = await fetchMessages(lastMsgId);
+            if (!msgs.length) return;
+
+            const box = document.getElementById('chatMessages');
+            const emptyEl = box.querySelector('.chat-empty');
+            if (emptyEl) emptyEl.remove();
+
+            const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+
+            msgs.forEach(m => {
+                if (box.querySelector(`[data-id="${m.id}"]`)) return;
+                box.appendChild(buildMsgEl(m, m.name === chatUsername));
+                lastMsgId = Math.max(lastMsgId, m.id);
+            });
+
+            // Trim old messages
+            const allMsgs = box.querySelectorAll('.chat-msg');
+            if (allMsgs.length > MAX_MSGS) {
+                for (let i = 0; i < allMsgs.length - MAX_MSGS; i++) allMsgs[i].remove();
+            }
+
+            if (atBottom) scrollToBottom();
+        } catch {}
+    }, 2500);
+}
+
+async function handleSend() {
+    const input = document.getElementById('chatMsgInput');
+    const msg = input.value.trim();
+    if (!msg || !chatUsername) return;
+
+    input.value = '';
+    input.disabled = true;
+
+    try {
+        await sendMessage(chatUsername, msg);
+        // Immediately poll for new messages
+        const msgs = await fetchMessages(lastMsgId);
+        const box = document.getElementById('chatMessages');
+        const emptyEl = box.querySelector('.chat-empty');
+        if (emptyEl) emptyEl.remove();
+        msgs.forEach(m => {
+            if (box.querySelector(`[data-id="${m.id}"]`)) return;
+            box.appendChild(buildMsgEl(m, m.name === chatUsername));
+            lastMsgId = Math.max(lastMsgId, m.id);
+        });
+        scrollToBottom();
+    } catch {
+        input.value = msg; // restore on failure
+    } finally {
+        input.disabled = false;
+        input.focus();
+    }
+}
+
+function joinChat(name) {
+    chatUsername = name.trim();
+    localStorage.setItem('chatUsername', chatUsername);
+
+    document.getElementById('chatNamePrompt').style.display = 'none';
+    document.getElementById('chatUi').style.display = 'flex';
+    document.getElementById('chatUserBadge').textContent = chatUsername;
+    document.getElementById('chatUserBadge').style.background = nameColor(chatUsername);
+
+    loadInitialMessages();
+    startPolling();
+
+    // Online count (approx: random between real-ish range)
+    document.getElementById('onlineCount').textContent = Math.floor(Math.random() * 40) + 10;
+
+    // Send btn
+    document.getElementById('chatSendBtn').addEventListener('click', handleSend);
+    document.getElementById('chatMsgInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    });
+}
+
+function initChat() {
+    const saved = localStorage.getItem('chatUsername');
+
+    document.getElementById('chatNameSubmit').addEventListener('click', () => {
+        const val = document.getElementById('chatNameInput').value.trim();
+        if (val.length < 1) return;
+        joinChat(val);
+    });
+    document.getElementById('chatNameInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const val = e.target.value.trim();
+            if (val.length < 1) return;
+            joinChat(val);
+        }
+    });
+
+    if (saved) {
+        document.getElementById('chatNameInput').value = saved;
+        joinChat(saved);
+    }
+}
+
+// ── Init ─────────────────────────────────────
 
 async function init() {
     try {
         const res = await fetch(CHANNELS_URL);
         channels = await res.json();
         buildChannelStrip(channels);
-
-        // Auto-play first channel on load
-        if (channels.length > 0) {
-            loadChannel(0);
-        }
+        if (channels.length > 0) loadChannel(0);
     } catch (err) {
         console.error('Failed to load channels:', err);
         document.getElementById('channelStrip').innerHTML =
             '<span style="color:#666;font-size:12px;padding:0 16px;">Could not load channels</span>';
     }
 
+    initChat();
     loadFixtures();
 }
 
