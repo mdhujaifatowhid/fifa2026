@@ -1,19 +1,51 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Video.js and activate EME (Encrypted Media Extensions)
-    const player = videojs('live-player');
-    player.eme(); 
+    // Your GitHub Raw JSON Links
+    const CHANNELS_URL = 'https://raw.githubusercontent.com/mdhujaifatowhid/fifa2026/main/fifa.json';
+    const FIXTURES_URL = 'https://raw.githubusercontent.com/mdhujaifatowhid/fifa2026/main/fixture.json';
 
     const channelsContainer = document.getElementById('channels-container');
     const fixturesContainer = document.getElementById('fixtures-container');
     const currentChannelTitle = document.getElementById('current-channel-title');
+    const videoElement = document.getElementById('live-player');
+    const videoContainer = document.getElementById('video-container');
 
-    // Fetch and Load Channels
-    fetch('fifa.json')
-        .then(response => response.json())
-        .then(channels => {
-            channelsContainer.innerHTML = ''; // Clear loading
+    let player;
+    let ui;
+
+    // Initialize Shaka Player
+    function initPlayer() {
+        // Install polyfills to ensure browser compatibility
+        shaka.polyfill.installAll();
+
+        if (shaka.Player.isBrowserSupported()) {
+            player = new shaka.Player(videoElement);
             
-            channels.forEach((channel, index) => {
+            // Set up Shaka UI Overlay
+            ui = new shaka.ui.Overlay(player, videoContainer, videoElement);
+            const controls = ui.getControls();
+
+            // Error listener
+            player.addEventListener('error', onPlayerError);
+        } else {
+            console.error('Browser not supported for Shaka Player!');
+        }
+    }
+
+    function onPlayerError(event) {
+        console.error('Shaka Player Error:', event.detail);
+    }
+
+    // Fetch and Load Channels from GitHub Raw
+    fetch(CHANNELS_URL)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(channels => {
+            channelsContainer.innerHTML = ''; // Clear loading text
+            
+            // Limit to top 6 channels for the navbar
+            channels.slice(0, 6).forEach((channel, index) => {
                 const button = document.createElement('button');
                 button.classList.add('chan-btn');
                 button.textContent = channel.name;
@@ -26,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 channelsContainer.appendChild(button);
 
-                // Auto-play first channel
+                // Auto-play the first channel on load
                 if (index === 0) {
                     button.classList.add('active');
                     changeStream(channel);
@@ -34,12 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         })
         .catch(err => {
-            console.error('Error loading channels:', err);
-            channelsContainer.innerHTML = '<span class="loading-text">Failed to load channels.</span>';
+            console.error('Error fetching channels:', err);
+            channelsContainer.innerHTML = '<span class="loading-text">Error loading channels from GitHub.</span>';
         });
 
-    // Fetch and Load Fixtures
-    fetch('fixture.json')
+    // Fetch and Load Fixtures from GitHub Raw
+    fetch(FIXTURES_URL)
         .then(response => response.json())
         .then(fixtures => {
             fixturesContainer.innerHTML = '';
@@ -68,34 +100,32 @@ document.addEventListener('DOMContentLoaded', () => {
             fixturesContainer.innerHTML = '<p class="loading-text">Failed to load fixtures.</p>';
         });
 
-    // Stream Switching with DRM ClearKey Handler
+    // Stream Switching Logic with ClearKey DRM Support
     function changeStream(channel) {
         currentChannelTitle.textContent = `Live: ${channel.name}`;
         
-        let srcObj = {
-            src: channel.url,
-            type: (channel.type === 'dash' || channel.url.includes('.mpd')) ? 'application/dash+xml' : 'application/x-mpegURL'
-        };
+        // Reset DRM Configuration from previous channel
+        player.configure({ drm: { clearKeys: {} } });
 
-        // If the channel is locked with ClearKey DRM
+        // If channel requires ClearKey DRM ڈیکرپشن
         if (channel.type === 'dash' && channel.kid && channel.key) {
-            srcObj.keySystems = {
-                'org.w3.clearkey': {
-                    videoRobustness: 'SW_SECURE_CRYPTO',
-                    audioRobustness: 'SW_SECURE_CRYPTO',
-                    clearkeys: {
+            player.configure({
+                drm: {
+                    clearKeys: {
                         [channel.kid]: channel.key
                     }
                 }
-            };
+            });
         }
 
-        // Reset player before loading new source to prevent memory leaks
-        player.src(srcObj);
-        player.ready(() => {
-            player.play().catch(error => {
-                console.log("Autoplay failed or Stream Error:", error);
-            });
+        // Load the stream URL (.mpd or .m3u8)
+        player.load(channel.url).then(() => {
+            console.log('Stream loaded successfully:', channel.name);
+        }).catch(error => {
+            console.error('Error triggering stream load:', error);
         });
     }
+
+    // Trigger player initialization
+    initPlayer();
 });
