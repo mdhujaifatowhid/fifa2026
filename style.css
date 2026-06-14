@@ -655,6 +655,12 @@ body {
 .chat-msg-header img {
     display: none !important;
 }
+/* চ্যাটের ভেতরের যেকোনো অ্যাভাটার, গোল বৃত্ত বা আইকন সম্পূর্ণ ডিলিট করার জন্য */
+.chat-avatar, 
+.chat-msg-header::before, 
+.chat-msg::before {
+    display: none !important;
+}
 /* Mobile Adjustments */
 @media (max-width: 600px) {
     .chat-section { padding: 24px 12px 12px; }
