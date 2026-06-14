@@ -17,19 +17,9 @@
     </header>
 
     <main class="container">
-        
         <section class="player-section">
             <div class="player-wrapper">
-                <video 
-                    id="live-player" 
-                    class="video-js vjs-default-skin vjs-big-play-centered" 
-                    controls 
-                    preload="auto" 
-                    data-setup="{}">
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video.
-                    </p>
-                </video>
+                <video id="live-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
             </div>
             <h2 id="current-channel-title" class="channel-title">Select a Channel</h2>
         </section>
@@ -40,14 +30,14 @@
                 <p class="loading-text">Loading Fixtures...</p>
             </div>
         </section>
-
     </main>
 
     <footer class="footer">
         <p>Designed & Developed with ❤️ by <span class="creator-name">Hujaifa.fun</span></p>
     </footer>
 
-    <script src="https://vjs.zencdn.net/8.10.0/video.js"></script>
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.1/dist/videojs-contrib-eme.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
